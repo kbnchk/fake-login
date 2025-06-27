@@ -12,9 +12,12 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
+  build_and_push:
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
