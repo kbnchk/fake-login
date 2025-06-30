@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
 type LoginRequest struct {
@@ -27,11 +28,29 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	addr := os.Getenv("SERVER_ADDR")
+	certFile := os.Getenv("TLS_CERT_FILE")
+	keyFile := os.Getenv("TLS_KEY_FILE")
+
+	if addr == "" {
+		addr = ":8080"
+	}
+
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 
 	http.HandleFunc("/api/login", loginHandler)
 
-	fmt.Println("Server running at http://localhost:8080/")
-	http.ListenAndServe(":8080", nil)
+	slog.Info("Server running at " + addr)
+	var serveErr error
+	if certFile != "" && keyFile != "" {
+		slog.Info("TLS enabled")
+		serveErr = http.ListenAndServeTLS(addr, certFile, keyFile, nil)
+	} else {
+		serveErr = http.ListenAndServe(addr, nil)
+	}
+	if serveErr != nil {
+		slog.Error(serveErr.Error())
+	}
 }

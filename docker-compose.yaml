@@ -1,0 +1,27 @@
+services:
+  fake-login:
+    image: ghcr.io/kbnchk/fake-login:0.0.1
+    container_name: fake-login
+    environment:
+      SERVER_ADDR: :8080
+      TLS_CERT_FILE: /fullchain.pem
+      TLS_KEY_FILE: /host.key
+    restart: unless-stopped
+    networks:
+      net:
+        ipv4_address: 172.25.25.10
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '32M'
+
+networks:
+  net:
+    name: fake-login-net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.25.0/24
+          gateway: 172.25.25.1
