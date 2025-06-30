@@ -4,8 +4,13 @@ services:
     container_name: fake-login
     environment:
       SERVER_ADDR: :8080
-      TLS_CERT_FILE: /fullchain.pem
-      TLS_KEY_FILE: /host.key
+      TLS_CERT_FILE: /cert/fullchain.pem
+      TLS_KEY_FILE: /cert/privkey.pem
+    volumes:
+      - type: bind
+        source: /cert/ #path to cert storage
+        target: /cert
+        read_only: true
     restart: unless-stopped
     networks:
       net:
