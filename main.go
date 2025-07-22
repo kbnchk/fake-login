@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 )
 
 type LoginRequest struct {
@@ -24,6 +25,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
+	time.Sleep(1 * time.Second)
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
