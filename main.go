@@ -1,10 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -29,11 +31,25 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
+func parseTLSVersion(s string) uint16 {
+	switch strings.ToUpper(strings.TrimSpace(s)) {
+	case "1.0", "TLS1":
+		return tls.VersionTLS10
+	case "1.1":
+		return tls.VersionTLS11
+	case "1.2":
+		return tls.VersionTLS12
+	default:
+		return tls.VersionTLS13
+	}
+}
+
 func main() {
 
 	addr := os.Getenv("SERVER_ADDR")
 	certFile := os.Getenv("TLS_CERT_FILE")
 	keyFile := os.Getenv("TLS_KEY_FILE")
+	minTlsVerEnv := os.Getenv("TLS_MIN_VER")
 
 	if addr == "" {
 		addr = ":8080"
@@ -47,8 +63,15 @@ func main() {
 	slog.Info("Server running at " + addr)
 	var serveErr error
 	if certFile != "" && keyFile != "" {
+		minTls := parseTLSVersion(minTlsVerEnv)
 		slog.Info("TLS enabled")
-		serveErr = http.ListenAndServeTLS(addr, certFile, keyFile, nil)
+		server := &http.Server{
+			Addr: addr,
+			TLSConfig: &tls.Config{
+				MinVersion: minTls,
+			},
+		}
+		serveErr = server.ListenAndServeTLS(certFile, keyFile)
 	} else {
 		serveErr = http.ListenAndServe(addr, nil)
 	}
