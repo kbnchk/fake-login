@@ -1,6 +1,6 @@
 services:
   fake-login:
-    image: ghcr.io/kbnchk/fake-login:0.0.4
+    image: ghcr.io/kbnchk/fake-login:latest
     container_name: fake-login
     environment:
       SERVER_ADDR: :8080
@@ -8,10 +8,7 @@ services:
       TLS_KEY_FILE: /cert/privkey.pem
       TLS_MIN_VER: 1.2 # default 1.3
     volumes:
-      - type: bind
-        source: /cert/ #path to cert storage
-        target: /cert
-        read_only: true
+      - /opt/certs-extracted:/certs:ro
     restart: unless-stopped
     networks:
       net:
@@ -26,8 +23,3 @@ networks:
   net:
     name: fake-login-net
     driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.25.25.0/24
-          gateway: 172.25.25.1
