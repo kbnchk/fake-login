@@ -83,8 +83,7 @@ async function submitForm(email, password) {
         const result = await response.json();
         alert("Login successful! Token: " + result.token);
 
-        // Пример редиректа после входа:
-        window.location.href = "/dashboard"; // или другая защищённая страница
+        window.location.href = "/dashboard";
     } catch (err) {
         console.error("Network error:", err);
         loginError("Network error. Try again later.");

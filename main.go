@@ -60,9 +60,12 @@ func main() {
 
 	http.HandleFunc("/api/login", loginHandler)
 
-	slog.Info("Server running at " + addr)
+	_, certErr := os.Stat(certFile)
+	_, keyErr := os.Stat(keyFile)
+
+	slog.Info("Starting server at " + addr)
 	var serveErr error
-	if certFile != "" && keyFile != "" {
+	if certErr == nil && keyErr == nil {
 		minTls := parseTLSVersion(minTlsVerEnv)
 		slog.Info("TLS enabled")
 		server := &http.Server{
@@ -72,7 +75,9 @@ func main() {
 			},
 		}
 		serveErr = server.ListenAndServeTLS(certFile, keyFile)
+
 	} else {
+		slog.Info("No SSL certificate provided")
 		serveErr = http.ListenAndServe(addr, nil)
 	}
 	if serveErr != nil {
