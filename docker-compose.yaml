@@ -1,25 +1,19 @@
 services:
   fake-login:
-    image: ghcr.io/kbnchk/fake-login:latest
+    image: ghcr.io/kbnchk/fake-login:0.1.0
     container_name: fake-login
     environment:
       SERVER_ADDR: :8080
-      TLS_CERT_FILE: /cert/fullchain.pem
-      TLS_KEY_FILE: /cert/privkey.pem
-      TLS_MIN_VER: 1.2 # default 1.3
-    volumes:
-      - /opt/certs-extracted:/certs:ro
+      # TLS не нужен, если перед контейнером стоит reverse proxy с терминацией TLS (Traefik).
+      # Для самостоятельного TLS: TLS_CERT_FILE, TLS_KEY_FILE, TLS_MIN_VER (по умолчанию 1.3)
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
-    networks:
-      net:
-        ipv4_address: 172.25.25.10
     deploy:
       resources:
         limits:
           cpus: '0.1'
           memory: '32M'
-
-networks:
-  net:
-    name: fake-login-net
-    driver: bridge

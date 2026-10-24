@@ -1,92 +1,93 @@
-const form = document.querySelector("form");
-eField = form.querySelector(".email"),
-    eInput = eField.querySelector("input"),
-    pField = form.querySelector(".password"),
-    pInput = pField.querySelector("input");
+(function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+    var year = $("year");
+    if (year) year.textContent = new Date().getFullYear();
 
-
-eInput.addEventListener("input", hideLoginError);
-eInput.addEventListener("input", checkEmail);
-pInput.addEventListener("input", hideLoginError);
-pInput.addEventListener("input", checkPass);
-
-form.onsubmit = (e) => {
-    e.preventDefault();
-
-    (eInput.value == "") ? eField.classList.add("shake", "error"): checkEmail();
-    (pInput.value == "") ? pField.classList.add("shake", "error"): checkPass();
-
-    setTimeout(() => {
-        eField.classList.remove("shake");
-        pField.classList.remove("shake");
-    }, 500);
-
-
-    if (!eField.classList.contains("error") && !pField.classList.contains("error")) {
-        submitForm(eInput.value, pInput.value);
+    function setInvalid(field, bad) {
+        if (!field) return;
+        field.classList.toggle("invalid", bad);
+        if (bad) {
+            field.classList.remove("shake");
+            void field.offsetWidth;
+            field.classList.add("shake");
+        }
     }
-}
-
-function checkEmail() {
-    let pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!eInput.value.match(pattern)) {
-        eField.classList.add("error");
-        eField.classList.remove("valid");
-        let errorTxt = eField.querySelector(".error-txt");
-
-        (eInput.value != "") ? errorTxt.innerText = "Enter a valid email address": errorTxt.innerText = "Email can't be blank";
-    } else {
-        eField.classList.remove("error");
-        eField.classList.add("valid");
+    function showAlert(text) {
+        var a = $("alert"), t = $("alert-text");
+        if (!a || !t) return;
+        t.textContent = text;
+        a.classList.add("show");
     }
-}
+    function hideAlert() { var a = $("alert"); if (a) a.classList.remove("show"); }
 
-function checkPass() {
-    if (pInput.value == "") {
-        pField.classList.add("error");
-        pField.classList.remove("valid");
-    } else {
-        pField.classList.remove("error");
-        pField.classList.add("valid");
-    }
-}
+    // ---------- страница входа ----------
+    var login = $("login");
+    if (login) {
+        var email = $("email"), pass = $("password"), btn = $("submit");
 
-function loginError(msg) {
-    const loginField = document.querySelector(".login-error");
-    const errorTxt = loginField.querySelector(".error-txt");
-    errorTxt.innerText = msg;
-    loginField.classList.add("error");
-}
+        email.addEventListener("input", function () { setInvalid($("f-email"), false); hideAlert(); });
+        pass.addEventListener("input", function () { setInvalid($("f-pass"), false); hideAlert(); });
 
-function hideLoginError() {
-    const loginField = document.querySelector(".login-error");
-    loginField.classList.remove("error");
-}
-
-async function submitForm(email, password) {
-    try {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username: email, password: password })
+        $("toggle").addEventListener("click", function () {
+            var show = pass.type === "password";
+            pass.type = show ? "text" : "password";
+            this.setAttribute("aria-pressed", String(show));
+            this.setAttribute("aria-label", show ? "Hide password" : "Show password");
         });
 
-        if (!response.ok) {
-            const error = await response.text();
-            loginError("Login failed: " + error);
-            return;
-        }
+        $("sso").addEventListener("click", function () {
+            showAlert("Single sign-on is not configured for this workspace.");
+        });
+        var ra = $("request-access");
+        if (ra) ra.addEventListener("click", function (e) {
+            e.preventDefault();
+            showAlert("Access requests are handled by your workspace administrator.");
+        });
 
-        const result = await response.json();
-        alert("Login successful! Token: " + result.token);
+        login.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var badEmail = !emailRe.test(email.value.trim());
+            var badPass = pass.value === "";
+            setInvalid($("f-email"), badEmail);
+            setInvalid($("f-pass"), badPass);
+            if (badEmail || badPass) return;
 
-        window.location.href = "/dashboard";
-    } catch (err) {
-        console.error("Network error:", err);
-        loginError("Network error. Try again later.");
+            btn.disabled = true;
+            btn.classList.add("busy");
+            $("submit-text").textContent = "Signing in…";
+            fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: email.value.trim(), password: pass.value })
+            }).then(function (r) {
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    showAlert(j.message || "Something went wrong. Please try again.");
+                });
+            }).catch(function () {
+                showAlert("Network error. Please try again later.");
+            }).then(function () {
+                btn.disabled = false;
+                btn.classList.remove("busy");
+                $("submit-text").textContent = "Sign in";
+                pass.value = "";
+                pass.focus();
+            });
+        });
     }
-}
 
+    // ---------- сброс пароля ----------
+    var forgot = $("forgot");
+    if (forgot) {
+        forgot.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var bad = !emailRe.test($("email").value.trim());
+            setInvalid($("f-email"), bad);
+            if (bad) return;
+            $("alert").classList.add("show");
+            forgot.querySelector("button").disabled = true;
+        });
+    }
+})();
