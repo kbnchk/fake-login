@@ -1,5 +1,7 @@
 # fake-login
 
+![Login page](docs/screenshot.png)
+
 A plausible login page ("Northgate Portal") that answers any request without a route of its own:
 access by IP, unknown SNI/Host. It works as a decoy so the server doesn't look "empty" to scanners.
 
