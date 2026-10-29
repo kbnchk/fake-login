@@ -1,20 +1,20 @@
 # fake-login
 
-Правдоподобная страница входа («Northgate Portal»), которая отвечает на любой запрос, у которого нет своего маршрута:
-заход по IP, неизвестный SNI/Host. Нужна как приманка, чтобы сервер не выглядел «пустым» для сканеров.
+A plausible login page ("Northgate Portal") that answers any request without a route of its own:
+access by IP, unknown SNI/Host. It works as a decoy so the server doesn't look "empty" to scanners.
 
-- Один статический бинарник (`scratch`, пользователь 65534), статика встроена через `go:embed`, внешних запросов страница не делает.
-- `POST /api/login` всегда отвечает 401 через 0.7–1.4 с; данные нигде не сохраняются и не логируются. Одновременно обрабатывается не более 64 запросов, тело ограничено 4 КБ.
-- Страницы: `/`, `/forgot-password`, `/privacy`, `/terms`, свой `404`, `robots.txt`, `favicon`.
-- Заголовки безопасности и CSP без inline-кода, ETag, таймауты сервера (Slowloris), graceful shutdown.
-- `fake-login -healthcheck` для `HEALTHCHECK`.
+- Single static binary (`scratch` image, user 65534); static files are embedded via `go:embed`, the page makes no external requests.
+- `POST /api/login` always responds with 401 after 0.7–1.4 s; credentials are never stored or logged. At most 64 requests are handled concurrently, the body is limited to 4 KB.
+- Pages: `/`, `/forgot-password`, `/privacy`, `/terms`, a custom `404`, `robots.txt`, `favicon`.
+- Security headers and a CSP without inline code, ETag, server timeouts (Slowloris), graceful shutdown.
+- `fake-login -healthcheck` for Docker `HEALTHCHECK`.
 
-## Переменные
-| Переменная | По умолчанию | Описание |
+## Environment variables
+| Variable | Default | Description |
 |---|---|---|
-| `SERVER_ADDR` | `:8080` | адрес прослушивания |
-| `TLS_CERT_FILE`, `TLS_KEY_FILE` | пусто | если оба файла существуют, включается TLS |
-| `TLS_MIN_VER` | `1.3` | минимальная версия TLS |
+| `SERVER_ADDR` | `:8080` | listen address |
+| `TLS_CERT_FILE`, `TLS_KEY_FILE` | empty | TLS is enabled if both files exist |
+| `TLS_MIN_VER` | `1.3` | minimum TLS version |
 
-## Сборка и релиз
-`docker build -t fake-login .`; образ в GHCR собирается GitHub Actions при пуше тега `v*`/`x.y.z`.
+## Build and release
+`docker build -t fake-login .`; the image is built and pushed to GHCR by GitHub Actions when a `v*`/`x.y.z` tag is pushed.
